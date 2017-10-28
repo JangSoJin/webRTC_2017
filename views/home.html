@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+	<title>Create a new chat room!</title>
+
+	<link type="text/css" rel="stylesheet" href="css/stylesheet.css" />
+	<link href="http://fonts.googleapis.com/css?family=Open+Sans Condensed:300italic,300,700" rel="stylesheet" type="text/css">
+
+
+</head>
+
+<body>
+
+	<header class="homebanner">
+
+			<h1 class="homebannertext">
+				WebRTC<span>Test</span>
+			</h1>
+
+	</header>
+
+	<section>
+
+		<div class="homesection">
+
+			<div class="node">
+				<img src="img/로고아무거나.jpg" alt="nodelogo" id="nodelogo"/>
+				<h2 id="chat">WebRTC Project</h2>
+			</div>
+
+			
+			<!--<input type="text" id="roomnameInput" placeholder="방 제목을 입력하세요" autofocus required>	
+			
+			<a title="Create" href="/create" id="create">
+				<div id="createbutton">
+					<div id="little">Create a Private</div>
+					<div id="big">CREATE ROOM!</div>
+				</div>
+			</a> -->
+			
+			<form action="/create" method="post">
+			
+				<input type="text" id="roomnameInput" name="roomnameInput" placeholder="방 제목을 입력하세요" autofocus required>
+				
+				<input type="submit" id="create" value="CREATE ROOM!"/>
+			
+			</form>
+			
+		
+			
+		</div>
+
+	</section>
+
+</body>
+</html>

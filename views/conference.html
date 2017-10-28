@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+
+
+
+<html>
+
+<head>
+
+	<title>conference room</title>
+
+	<link type="text/css" rel="stylesheet" href="../css/stylesheet.css" />
+	<link href="http://fonts.googleapis.com/css?family=Open+Sans Condensed:300italic,300,700" rel="stylesheet" type="text/css">
+	
+	<!-- 파일 공유를 위한 스크립트 소스 -->
+	<script src="js/RTCMultiConnection.min.js"></script>
+	<script src="https://cdn.webrtc-experiment.com:443/FileBufferReader.js"></script>
+
+	<!--canvas를 위한 스크립트 소스 -->
+	<script src="//code.jquery.com/jquery-1.12.0.min.js"></script>
+	<script src="../js/farbtastic/farbtastic.js"></script>
+	<link rel="stylesheet" href="../js/farbtastic/farbtastic.css" />
+  
+	<!-- 전체적인 Multi Peer Connection을 위한 스크립트 소스 -->
+	<script src="js/RTCMultiConnection.js"></script>
+	<script src="//cdn.webrtc-experiment.com/firebase.js"></script>
+
+	<!-- 스크린 공유를 위한 스크립트 소스 -->
+	<script src="js/getScreenId.js"> </script>
+	<script src="js/BandwidthHandler.js"></script>
+	<script src="js/screen.js"> </script>
+
+	<!-- 스크린 공유를 위한 확장 프로그램 설치 링크 -->
+	<link rel="chrome-webstore-item" href="https://chrome.google.com/webstore/detail/ajhifddimkapgcifgcodmmfdlknahffk">
+
+</head>
+
+<body> <!--style="overflow-y:hidden;"-->
+	<nav id="sidebar-wrapper">
+			<button id="painter" style="background-color:#f0f1f3; margin-left:10px; margin-top:0;" ><img src="img/paint-palette.png" /></button>
+			<button id="file_transfer" style="background-color:#f0f1f3; margin-left:10px; margin-top:10px;"><img src="img/folder.png" /></button>
+			<button id="sharing" style="background-color:#f0f1f3;  margin-left:10px; margin-top: 10px"><img src="img/networking.png" /></button>
+	</nav>
+
+	<nav id="sidebar-wrapper1">
+		<ul class="sidebar-nav1" style="margin-top:60px">
+			<button id="chat-close" style="background-color:#3c4446;" class="btn btn-light btn-lg pull-right toggle"><i class="fa fa-times"></i></button>
+			<li>
+				<a onclick = $("#chat-close").click(); ><img src="img/chat.png" style="float:left; margin-left:10px">채팅</a>
+			</li>
+			<div id="chat-content">
+				<div class="chatscreen">
+					<ul class="chats">
+						<!-- The chat messages will go here -->
+					</ul>
+
+				</div>
+				<footer>
+					<form id="chatform">
+						<textarea id="message" placeholder="Write something.."></textarea>
+						<input type="submit" id="submit" value="SEND"/>
+					</form>
+				</footer>
+			</div>
+		</ul>
+	</nav>
+
+	<header class="banner">
+
+		<h1 class="bannertext">
+			WebRTC<span>   </span>TESTING
+		</h1>
+
+	</header>
+
+	<section class="section">
+
+		<div class="connected">
+
+			<img src="../img/unnamed.jpg" id="creatorImage" />
+
+			<div class="infoConnected">
+				<h2>이름을 입력해 주세요</h2>
+				<br/>
+
+				<form class="loginForm">
+					<input type="text" id="yourName" placeholder="Your nick name" /><br/>
+					<!--<input type="text" id="yourEmail" placeholder="Your email address" /><br/>-->
+					<input type="submit" id="yourEnter" value="입장" />
+				</form>
+
+			</div>
+
+		</div>
+
+		<div class="personinside">
+
+			<img src="../img/unnamed.jpg" id="ownerImage" />
+
+			<div class="infoInside">
+				<h2>이름을 입력해주세요</h2>
+				<br/>
+
+				<form class="loginForm">
+					<input type="text" id="hisName" placeholder="Your nick name" /><br/>
+					<!--<input type="text" id="hisEmail" placeholder="Your email address" /><br/>-->
+					<input type="submit" id="hisEnter" value="입장" />
+				</form>
+
+			</div>
+
+		</div>
+
+		<div class="invite-textfield">
+
+			<h2>이 방엔 아직 아무도 없네요.</h2>
+			<h5>Invite a friend by sending them this URL</h5>
+
+			<div class="link">
+				<a title="Invite a friend" href="" id="link"></a>
+			</div>
+
+		</div>
+
+		<div class="left">
+
+			<img src="../img/unnamed.jpg" id="leftImage" />
+
+			<div class="info">
+				<h2><span class="nickname-left"></span> has left this chat.</h2>
+				<h5>Invite somebody else by sending them this page.</h5>
+			</div>
+
+		</div>
+
+		<div class="toomanypeople">
+			<h2>Oops, you can not join this chat!</h2>
+			<h5>There are already two people in it. Would you like to create a <a title="New Room" href="/create" id="room">new room</a>?</h5>
+		</div>
+
+		<div class="nomessages">
+
+			<img src="../img/unnamed.jpg" id="noMessagesImage" />
+
+			<div class="info">
+				<h2><span class="nickname-chat"></span>에 입장하셨습니다.</h2>
+				<h5>Send them a message from the form right!</h5>
+			</div>
+		</div>
+
+	</section>
+
+	<div class="video-contents">
+		<div style="width: 1000px; left:20px; bottom: 10px; position: fixed" id="meetings-list">
+			<div id="videos-container"></div>
+		</div>
+	</div>
+
+	<!---------------화면 공유 ----------------------->
+	<div class ="video-sharing">
+		<!--<h1>Screen Sharing을 위해서는 확장 프로그램을 설치해야 합니다.</h1>-->
+		<h2 id="number-of-participants" style="display: block;text-align: center;border:0;margin-bottom:0;">full-HD (1080p) Screen sharing </h2>
+
+		<!--<input type="text" id="user-name" size="5" style="border:5px solid #58FAF4" placeholder="Your Name"/>-->
+
+		<button id="share-screen" class="setup">Share Your Screen</button>
+		<div id="screen-info"></div>
+		<div id="screens-container">
+			
+		</div>
+		
+		<a href="https://chrome.google.com/webstore/detail/screen-capturing/ajhifddimkapgcifgcodmmfdlknahffk" target="_blank">**Chrome Web Store**</a>
+	</div>
+	
+	<div class="canvas-content">
+	
+		<h2>Canvas</h2>
+		<table bgcolor="#ffffff">
+			<tr>
+				<td>
+					<div id="colorpicker"></div>
+				</td>
+				<td rowspan="3">
+					
+					<canvas id="canvas" width="1200" height="450"></canvas>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<!-- 두께, 투명도, 리셋이 서로 통신하지 않음. -->
+					
+					<!-- 슬라이더: 두께 선택 -->
+					<h3>두께 조절</h3>
+					<input id="sliderA" type="range" min="0" max="20" value="5" /><br/>
+					<!-- 슬라이더: 투명도 선택 -->
+					<h3>투명도 조절</h3>
+					<input id="sliderB" type="range" min="0" max="100" />
+					
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<!-- 리셋 버튼 -->
+					<input type="button" onclick="clearCANVAS()" value="Reset!">
+				</td>
+			</tr>
+		</table>
+	</div>
+
+	<div class="file_content">
+		<button class="btn-select-file"></button>
+
+		<iframe></iframe>
+		<div id="logs">
+
+		</div>
+
+	<script>
+
+        // url을 통해서 roomid 값 얻어오기
+        var originurl = window.location.href;
+        var spliturl = originurl.split("/");
+        var urllength = spliturl.length;
+        var id = spliturl[urllength-1];
+
+        /* -- 비디오 컨퍼런싱 및 소켓 통신 연결 스크립트 -- */
+        var connection = new RTCMultiConnection();	//RTCMultiConnection 객체 받아오기.
+
+        var videosContainer = document.getElementById('videos-container') || document.body;
+
+
+        connection.preventSSLAutoAllowed = false;
+        connection.autoReDialOnFailure = false;
+        connection.setDefaultEventsForMediaElement = false;
+
+
+        // 미디어 connection의 타입을 설정하기
+        connection.session = {
+            audio: true,
+            video: true,
+			data : true
+        };
+
+        var attachMediaStream = null;
+        var reattachMediaStream = null;
+        var webrtcDetectedBrowser = null;
+        var webrtcDetectedVersion = null;
+
+        if (navigator.mozGetUserMedia) {
+            console.log("파이어 폭스 브라우저 입니다.");
+            webrtcDetectedBrowser = "firefox";
+        } else if (navigator.webkitGetUserMedia) {
+            console.log("크롬 브라우저 입니다.");
+            webrtcDetectedBrowser = "chrome";
+        } else {
+            console.log("WebRTC가 지원하는 브라우저가 아닙니다.");
+        }
+        // 사용자 수
+        var numberOfRemoteVideos = 0;
+        var videouserid = {};
+		
+        // 사용자 비디오 출력하기.
+        /*connection.onstream = function(e) {
+            e.mediaElement.width = 300;
+            videosContainer.insertBefore(e.mediaElement, videosContainer.firstChild);
+            //scaleVideos();
+        };*/
+
+        //for(var i=0; i<connection.length; i++){
+        //videosContainer.innerHTML = '['+connection.userid+']';
+        //}
+
+        // 사용자가 나갈 때.
+        connection.onleave = function(e) {
+            var video = document.getElementById(e.userid);
+            if (video && video.parentNode && video.parentNode.parentNode) {
+                video.parentNode.parentNode.removeChild(video.parentNode);
+            }
+        };
+
+       /*document.getElementById('open-room').onclick = function() {		
+					this.disabled = true;									
+					connection.open(id);	//채널 명을 받아서 connection을 열어둠.
+		};
+        connection.connect();*/
+
+
+
+		//파일부분 ----------------
+
+        window.getExternalIceServers = true;
+
+        // Muaz Khan     - https://github.com/muaz-khan
+        // MIT License   - https://www.WebRTC-Experiment.com/licence/
+        // Source Code   - https://github.com/muaz-khan/RTCMultiConnection
+
+
+        window.onerror = console.error = function() {
+            var error = JSON.stringify(arguments);
+            if(error.indexOf('Blocked a frame with origin') !== -1) {
+                return;
+            }
+            alert('Error:\n' + error);
+        };
+        // Muaz Khan     - https://github.com/muaz-khan
+        // MIT License   - https://www.WebRTC-Experiment.com/licence/
+        // Source Code   - https://github.com/muaz-khan/RTCMultiConnection
+       document.querySelector('.btn-select-file').onclick = function() {
+                joinARoom(id);
+        };
+
+        var btnSelectFile = document.querySelector('.btn-select-file');
+
+        function joinARoom(roomId) {
+            var iframe = document.querySelector('iframe');
+            btnSelectFile.onclick = function(file) {
+                if(file && (file instanceof File || file instanceof Blob) && file.size) {
+                    previewFile(file);
+                    onFileSelected(file);
+                    return;
+                }
+                var fileSelector = new FileSelector();
+                fileSelector.selectSingleFile(function(file) {
+                    previewFile(file);
+                    onFileSelected(file);
+                });
+            };
+            var lastSelectedFile;
+            var room_id = '';
+            // 60k -- assuming receiving client is chrome
+            var chunk_size = 60 * 1000;
+            function setupWebRTCConnection() {
+                if (connection) {
+                    return;
+                }
+                // www.RTCMultiConnection.org/docs/
+                connection = new RTCMultiConnection();
+                // to make sure, "connection-reconnect" doesn't sends files again
+                connection.fileReceived = {};
+                // by default, socket.io server is assumed to be deployed on your own URL
+                connection.socketURL = '/';
+                // comment-out below line if you do not have your own socket.io server
+                // connection.socketURL = 'https://rtcmulticonnection.herokuapp.com:443/';
+                connection.socketMessageEvent = 'file-sharing-demo';
+                connection.chunkSize = chunk_size;
+
+                connection.enableFileSharing = true;
+                if (room_id && room_id.length) {
+                    connection.userid = room_id;
+                }
+                connection.channel = connection.sessionid = roomId;
+                connection.session = {
+                    data: true
+                    // oneway: true --- to make it one-to-many
+                };
+                connection.filesContainer = logsDiv;
+                connection.connectedWith = {};
+                connection.onmessage = function(event) {
+                    if(event.data.doYouWannaReceiveThisFile) {
+                        if(!connection.fileReceived[event.data.fileName]) {
+                            connection.send({
+                                yesIWannaReceive:true,
+                                fileName: event.data.fileName
+                            });
+                        }
+                    }
+                    if(event.data.yesIWannaReceive && !!lastSelectedFile) {
+                        connection.shareFile(lastSelectedFile, event.userid);
+                    }
+                };
+                connection.onopen = function(e) {
+                    try {
+                        chrome.power.requestKeepAwake('display');
+                    }
+                    catch(e) {}
+                    if (connection.connectedWith[e.userid]) return;
+                    connection.connectedWith[e.userid] = true;
+                    var message = '<b>' + e.userid + '</b><br>is connected.';
+                    appendLog(message);
+                    if (!lastSelectedFile) return;
+                    // already shared the file
+                    var file = lastSelectedFile;
+                    setTimeout(function() {
+                        appendLog('Sharing file<br><b>' + file.name + '</b><br>Size: <b>' + bytesToSize(file.size) + '<b><br>With <b>' + connection.getAllParticipants().length + '</b> users');
+                        connection.send({
+                            doYouWannaReceiveThisFile: true,
+                            fileName: file.size + file.name
+                        });
+                    }, 500);
+                };
+                connection.onclose = function(e) {
+                    incrementOrDecrementUsers();
+                    if (connection.connectedWith[e.userid]) return;
+                    appendLog('Data connection has been closed between you and <b>' + e.userid + '</b>. Re-Connecting..');
+                    connection.join(roomId);
+                };
+                connection.onerror = function(e) {
+                    if (connection.connectedWith[e.userid]) return;
+                    appendLog('Data connection failed. between you and <b>' + e.userid + '</b>. Retrying..');
+                };
+                setFileProgressBarHandlers(connection);
+                connection.onUserStatusChanged = function(user) {
+                    incrementOrDecrementUsers();
+                };
+                connection.onleave = function(user) {
+                    user.status = 'offline';
+                    connection.onUserStatusChanged(user);
+                    incrementOrDecrementUsers();
+                };
+                var message = 'Connecting room:<br><b>' + connection.channel + '</b>';
+                appendLog(message);
+                connection.openOrJoin(connection.channel, function(isRoomExists, roomid) {
+                    var message = 'Successfully connected to room: <b>' + roomid + '</b><hr>Other users can join you on iPhone/Android using "' + roomid + '" or desktop (Windows/MacOSX/Ubuntu) users can join using this (secure/private) URL: <a href="./file-sharing.html#' + roomid + '" target="_blank">file-sharing.html#' + roomid + '</a>';
+                    // if (isRoomEists) { }
+                    appendLog(message);
+                    if(document.getElementById('room-id')) {
+                        if(innerWidth > 500) {
+                            document.getElementById('room-id').parentNode.innerHTML = 'Joined room: ' + roomid;
+                        }
+                        else {
+                            document.getElementById('room-id').parentNode.innerHTML = 'Joined room:<br>' + roomid;
+                        }
+                    }
+                    var socket = connection.getSocket();
+                    socket.on('disconnect', function() {
+                        appendLog('Seems disconnected.', 'red');
+                    });
+                    socket.on('connect', function() {
+                        location.reload();
+                    });
+                    socket.on('error', function() {
+                        location.reload();
+                    });
+                    window.addEventListener('offline', function() {
+                        appendLog('Seems disconnected.', 'red');
+                    }, false);
+                });
+                window.connection = connection;
+            }
+            function setFileProgressBarHandlers(connection) {
+                var progressHelper = {};
+                // www.RTCMultiConnection.org/docs/onFileStart/
+                connection.onFileStart = function(file) {
+                    if (connection.fileReceived[file.size + file.name]) return;
+                    var div = document.createElement('div');
+                    div.style.borderBottom = '1px solid black';
+                    div.style.padding = '2px 4px';
+                    div.id = file.uuid;
+                    var message = '';
+                    if (file.userid == connection.userid) {
+                        message += 'Sharing with:' + file.remoteUserId;
+                    } else {
+                        message += 'Receiving from:' + file.userid;
+                    }
+                    message += '<br><b>' + file.name + '</b>.';
+                    message += '<br>Size: <b>' + bytesToSize(file.size) + '</b>';
+                    message += '<br><label>0%</label> <progress></progress>';
+                    if(file.userid !== connection.userid) {
+                        message += '<br><button id="resend">Receive Again?</button>';
+                    }
+                    div.innerHTML = message;
+                    connection.filesContainer.insertBefore(div, connection.filesContainer.firstChild);
+                    if(file.userid !== connection.userid && div.querySelector('#resend')) {
+                        div.querySelector('#resend').onclick = function(e) {
+                            e.preventDefault();
+                            this.onclick = function() {};
+                            if(connection.fileReceived[file.size + file.name]) {
+                                delete connection.fileReceived[file.size + file.name];
+                            }
+                            connection.send({
+                                yesIWannaReceive: true,
+                                fileName: file.name
+                            }, file.userid);
+                            div.parentNode.removeChild(div);
+                        };
+                    }
+                    if (!file.remoteUserId) {
+                        progressHelper[file.uuid] = {
+                            div: div,
+                            progress: div.querySelector('progress'),
+                            label: div.querySelector('label')
+                        };
+                        progressHelper[file.uuid].progress.max = file.maxChunks;
+                        return;
+                    }
+                    if (!progressHelper[file.uuid]) {
+                        progressHelper[file.uuid] = {};
+                    }
+                    progressHelper[file.uuid][file.remoteUserId] = {
+                        div: div,
+                        progress: div.querySelector('progress'),
+                        label: div.querySelector('label')
+                    };
+                    progressHelper[file.uuid][file.remoteUserId].progress.max = file.maxChunks;
+                };
+                // www.RTCMultiConnection.org/docs/onFileProgress/
+                connection.onFileProgress = function(chunk) {
+                    if (connection.fileReceived[chunk.size + chunk.name]) return;
+                    var helper = progressHelper[chunk.uuid];
+                    if (!helper) {
+                        return;
+                    }
+                    if (chunk.remoteUserId) {
+                        helper = progressHelper[chunk.uuid][chunk.remoteUserId];
+                        if (!helper) {
+                            return;
+                        }
+                    }
+                    helper.progress.value = chunk.currentPosition || chunk.maxChunks || helper.progress.max;
+                    updateLabel(helper.progress, helper.label);
+                };
+                // www.RTCMultiConnection.org/docs/onFileEnd/
+                connection.onFileEnd = function(file) {
+                    if (connection.fileReceived[file.size + file.name]) return;
+                    var div = document.getElementById(file.uuid);
+                    if (div) {
+                        div.parentNode.removeChild(div);
+                    }
+                    if (file.remoteUserId === connection.userid) {
+                        previewFile(file);
+                        connection.fileReceived[file.size + file.name] = file;
+                        var message = 'Successfully received file';
+                        message += '<br><b>' + file.name + '</b>.';
+                        message += '<br>Size: <b>' + bytesToSize(file.size) + '</b>.';
+                        message += '<br><a href="' + file.url + '" target="_blank" download="' + file.name + '">Download</a>';
+                        var div = appendLog(message);
+                        return;
+                    }
+                    var message = 'Successfully shared file';
+                    message += '<br><b>' + file.name + '</b>.';
+                    message += '<br>With: <b>' + file.remoteUserId + '</b>.';
+                    message += '<br>Size: <b>' + bytesToSize(file.size) + '</b>.';
+                    appendLog(message);
+                };
+                function updateLabel(progress, label) {
+                    if (progress.position === -1) {
+                        return;
+                    }
+                    var position = +progress.position.toFixed(2).split('.')[1] || 100;
+                    label.innerHTML = position + '%';
+                }
+            }
+            function bytesToSize(bytes) {
+                var k = 1000;
+                var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+                if (bytes === 0) {
+                    return '0 Bytes';
+                }
+                var i = parseInt(Math.floor(Math.log(bytes) / Math.log(k)), 10);
+                return (bytes / Math.pow(k, i)).toPrecision(3) + ' ' + sizes[i];
+            }
+            function onFileSelected(file) {
+                var innerHTML = 'You selected:<br><b>' + file.name + '</b><br>Size: <b>' + bytesToSize(file.size) + '</b>';
+                appendLog(innerHTML);
+                lastSelectedFile = file;
+                if (connection) {
+                    connection.send({
+                        doYouWannaReceiveThisFile: true,
+                        fileName: file.size + file.name
+                    });
+                }
+            }
+            var numberOfUsers = document.getElementById('number-of-users');
+            function incrementOrDecrementUsers() {
+                numberOfUsers.innerHTML = connection ? connection.getAllParticipants().length : 0;
+            }
+            var logsDiv = document.getElementById('logs');
+            function appendLog(html, color) {
+                var div = document.createElement('div');
+                div.innerHTML = '<p>' + html + '</p>';
+                logsDiv.insertBefore(div, logsDiv.firstChild);
+                if(color) {
+                    div.style.color = color;
+                }
+                return div;
+            }
+            window.onerror = console.error = function() {
+                var error = JSON.stringify(arguments);
+                if(error.indexOf('Blocked a frame with origin') !== -1) {
+                    return;
+                }
+                appendLog('Error:<br>' + error, 'red')
+            };
+            function previewFile(file) {
+                btnSelectFile.style.left = '5px';
+                btnSelectFile.style.right = 'auto';
+                btnSelectFile.style.zIndex = 10;
+                btnSelectFile.style.top = '5px';
+                btnSelectFile.style.outline = 'none';
+                document.querySelector('.overlay').style.display = 'none';
+                iframe.style.display = 'block';
+                iframe.onload = function() {
+                    Array.prototype.slice.call(iframe.contentWindow.document.body.querySelectorAll('*')).forEach(function(element) {
+                        element.style.maxWidth = '100%';
+                    });
+                    if (!file.type || fileNameMatches || file.type.match(/image|video|audio|pdf/g) || iframe.src.indexOf('data:image/png') !== -1 || iframe.src.toLowerCase().search(/.png|.jpeg|.jpg|.gif/g) !== -1) {
+                        iframe.contentWindow.document.body.style.textAlign = 'center';
+                        iframe.contentWindow.document.body.style.background = 'black';
+                        iframe.contentWindow.document.body.style.color = 'white';
+                        return;
+                    }
+                    iframe.contentWindow.document.body.style.textAlign = 'left';
+                    iframe.contentWindow.document.body.style.background = 'white';
+                    iframe.contentWindow.document.body.style.color = 'black';
+                };
+                var fileNameMatches = (file.name || '').toLowerCase().match(/.webm|.wav|.pdf|.txt|.js|.css|.cs|.png|.jpg|.jpeg|.gif/g);
+                if (fileNameMatches) {
+                    iframe.src = URL.createObjectURL(file);
+                } else {
+                    iframe.src = 'https://webrtcweb.com/fs/unknown-file.png';
+                }
+            }
+            setupWebRTCConnection();
+        }
+        window.addEventListener('online', function() {
+            location.reload();
+        }, false);
+        // drag-drop support
+        document.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.dataTransfer.dropEffect = 'copy';
+        }, false);
+        document.addEventListener('drop', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            if(!e.dataTransfer.files || !e.dataTransfer.files.length) {
+                return;
+            }
+            var file = e.dataTransfer.files[0];
+            if(!connection) {
+                document.getElementById('join-room').onclick();
+            }
+            btnSelectFile.onclick(file);
+        }, false);
+
+	</script>
+
+	<!--<script src="http://cdnjs.cloudflare.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>-->
+	<script src="../js/moment.min.js"></script>
+	<script src="js/chat.js"></script>
+	<script src="js/canvas.js"></script>
+	<script src="js/screenshare.js"></script>
+	<script src="/socket.io/socket.io.js"></script>
+</body>
+
+</html>
